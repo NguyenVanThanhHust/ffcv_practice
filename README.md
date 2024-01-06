@@ -10,3 +10,9 @@ Create docker container
 ```
 docker run -it --gpus all --network host --name ffcv_ctn -v ${PWD}:/workspace/ ffcv_img
 ```
+## TODO
+- [ ] Compare benchmark
+- [ ] DALI version
+
+## Benchmark
+Update later
