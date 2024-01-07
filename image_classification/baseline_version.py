@@ -11,6 +11,22 @@ import torchvision.transforms as transforms
 import os
 import argparse
 
+from functools import wraps
+import time
+
+
+def timeit(func):
+    @wraps(func)
+    def timeit_wrapper(*args, **kwargs):
+        start_time = time.perf_counter()
+        result = func(*args, **kwargs)
+        end_time = time.perf_counter()
+        total_time = end_time - start_time
+        print(f'Function {func.__name__}{args} {kwargs} Took {total_time:.4f} seconds')
+        return result
+    return timeit_wrapper
+
+
 from models import *
 from utils import progress_bar
 
@@ -82,6 +98,7 @@ scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
 
 
 # Training
+@timeit
 def train(epoch):
     print('\nTrain at epoch: %d' % epoch)
     net.train()
@@ -101,10 +118,10 @@ def train(epoch):
         total += targets.size(0)
         correct += predicted.eq(targets).sum().item()
 
-        progress_bar(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
-                     % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+        # progress_bar(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
+        #              % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
-
+@timeit
 def test(epoch):
     print("\n Eval at epoch: ", epoch)
     global best_acc
@@ -123,8 +140,8 @@ def test(epoch):
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
 
-            progress_bar(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
-                         % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
+            # progress_bar(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
+            #              % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
     # Save checkpoint.
     acc = 100.*correct/total
@@ -139,9 +156,9 @@ def test(epoch):
             os.mkdir('checkpoint')
         torch.save(state, './checkpoint/ckpt.pth')
         best_acc = acc
-
+    return acc
 
 for epoch in range(start_epoch, start_epoch+10):
     train(epoch)
-    test(epoch)
+    acc = test(epoch)
     scheduler.step()
